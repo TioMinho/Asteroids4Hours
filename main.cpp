@@ -26,6 +26,7 @@
 // ----- Bibliotecas -----
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <math.h>
 #include <vector>
 #include <time.h>
@@ -57,6 +58,10 @@ int main()
 	bool isOver = false;							// Verifica se o Game Over está ou não ativo. Inicialmente, está inativo.
 	sf::Clock restartTimer;							// Timer para cronometrar o tempo para Resetar o Jogo
 	sf::Text timerText;								// Texto para exibir o Timer de restart do Jogo. Carregará a fonte de "scoreTextFont".
+	
+	// EXTRA #04: MUSIC
+	sf::Sound bgMusic;								// Objeto de "sf::Sound" que representa a Música de Fundo do Game
+	sf::SoundBuffer bgmBuffer;						// Buffer que armazena a faixa de áudio a ser executada por "bgMusic"
 
 	// Nave
 	sf::Sprite ship;								// Objeto do tipo "sf::Sprite" que representa o Sprite
@@ -121,6 +126,10 @@ int main()
 	timerText.setCharacterSize(100);
 	timerText.setPosition(350, 350);
 
+	// EXTRA #04: MUSIC
+	bgmBuffer.loadFromFile("res/asteroidsBGM.ogg");
+	bgMusic.setBuffer(bgmBuffer);
+
 	// Na linha a seguir, modificamos o Ponto de Origem do Sprite da Nave para sua posição central
 	// Para isso, nós usamos o método ".getLocalBounds()" para recebermos o Retângulo que contorna o Sprite, e,
 	// então, acessamos os atributos "width" e "height" desse Retângulo para a Dimensão do Sprite.
@@ -167,8 +176,12 @@ int main()
 		if (isStart)
 		{
 			// ----------------------- Input Handling -----------------------
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
 				isStart = false;		// Desligamos o Menu 
+
+				// EXTRA #04: MUSICA
+				bgMusic.play();			// Ligamos a Música de Fundo
+			}
 
 			// ----------------------- Tratamento de Renderizações -----------------------
 			window.clear();
@@ -419,7 +432,12 @@ int main()
 					if (sLife == 0)
 					{
 						isOver = true;
+
+						// EXTRA #03: GAME OVER
 						restartTimer.restart();
+
+						// EXTRA #04: MUSICA
+						bgMusic.stop();
 					}
 				}
 			}
