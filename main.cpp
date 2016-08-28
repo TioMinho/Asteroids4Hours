@@ -45,6 +45,12 @@ int main()
 	sf::Texture startMenuImg;						// Textura da Imagem de Fundo a ser carregada em "startMenu"
 	bool isStart = true;							// Verifica se o MenuInicial está ou não ativo. Inicialmente, está ativo.
 
+	// EXTRA #02: HUD (Life e Score)
+	sf::Sprite shipsAvailable[3];					// Representa o "life" da Nave, indicando na HUD quantas ainda estão disponíveis
+	sf::Text scoreText;								// Texto a ser impresso na Tela para indicar o score atual
+	sf::Font scoreTextFont;							// Fonte necessária para a Renderização do Texto
+	int score = 0;									// Variável para armazenar o valor do Score já obtido
+
 	// Nave
 	sf::Sprite ship;								// Objeto do tipo "sf::Sprite" que representa o Sprite
 	sf::Texture shipTxt;							// Objeto do tipo "sf::Texture" que implementa a Textura do Sprite
@@ -71,6 +77,7 @@ int main()
 	// Inicialização da Janela
 	window.setFramerateLimit(60);					// Limita o FPS em um teto de 60FPS, controlando a performance do Game.
 
+	// EXTRA #01: MENU INICIAL
 	// Inicialização do Menu Inicial
 	startMenuImg.loadFromFile("res/startScreen.png");
 	startMenu.setTexture(startMenuImg);
@@ -78,6 +85,25 @@ int main()
 	// Inicializações da Nave
 	shipTxt.loadFromFile("res/ship.png");			// Carrega a imagem que está em "res/ship.png" para a textura "shipTxt".
 	ship.setTexture(shipTxt);						// Seleciona "shipTxt" como Textura do sprite "ship"
+
+	// EXTRA #02: HUD
+	// Inicialização do HUD (Life)
+	for (int i = 0; i < 3; i++) {
+		shipsAvailable[i].setTexture(shipTxt);	// Carrega as Texturas nos três Sprites com base na Textura de "ship"
+		
+		// Iremos posicionar cada Nave da seguinte forma:
+		// Eixo X: Extremidade da esquerda somado de 15 e somado pelo tamanho do Sprite multiplicado pelo índice (posição)
+		// Eixo Y: fixo na Extremidade superior somado de 50.
+		shipsAvailable[i].setPosition(15 + (i * shipsAvailable[i].getLocalBounds().width), 80);
+		shipsAvailable[i].setRotation(270);
+	}
+	
+	// Inicialização do HUD (Score)
+	scoreTextFont.loadFromFile("res/PressStart2P.ttf");
+	scoreText.setFont(scoreTextFont);
+	scoreText.setCharacterSize(14);
+	scoreText.setPosition(25, 25);
+	scoreText.setString("00");
 
 	// Na linha a seguir, modificamos o Ponto de Origem do Sprite da Nave para sua posição central
 	// Para isso, nós usamos o método ".getLocalBounds()" para recebermos o Retângulo que contorna o Sprite, e,
@@ -314,6 +340,11 @@ int main()
 							aVelocity.push_back(tempVel[0]); aVelocity.push_back(tempVel[1]);
 						}
 
+						// EXTRA #02: HUD
+						// Pontuação no Score
+						score += (60 - listAsteroids[i].getRadius());		// Scores de 30 (Grande), 40 (Médio) e 50 (Pequeno)
+						scoreText.setString(std::to_string(score));			// Tranformação do Score em Texto
+
 						// Apagamos o Asteroid da posição "i" da lista "listAsteroid" (e apagamos sua velocidade
 						// na lista espelhada "aVelocity").
 						listAsteroids.erase(listAsteroids.begin() + i);
@@ -390,6 +421,13 @@ int main()
 			// Desenha todos os Projéteis na (buffer de mémoria da) Janela
 			for (int i = 0; i < listBullets.size(); i++)
 				window.draw(listBullets[i]);
+
+			// EXTRA #02: HUD
+			// Desenha a HUD na (buffer de memória da) Janela
+			for (int i = 0; i < sLife; i++)			// Perceba: nós só renderizamos a quantidade de Naves igual à de Life!
+				window.draw(shipsAvailable[i]);
+
+			window.draw(scoreText);
 
 			// Exibe tudo que está desenhado na (buffer de memória da) Janela
 			window.display();
