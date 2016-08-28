@@ -39,6 +39,12 @@ int main()
 	// Estrutura do Construtor: ( [Dimensão], [Título], [Estilo] )
 	sf::RenderWindow window(sf::VideoMode(800, 600), "Asteroids 4 Horas", sf::Style::Close);		// Janela do Jogo
 
+	// EXTRA #01: MENU INICIAL
+	// Menu Inicial
+	sf::Sprite startMenu;							// Objeto do tipo "sf::Image" que representa a Imagem de Fundo do Menu Inicial
+	sf::Texture startMenuImg;						// Textura da Imagem de Fundo a ser carregada em "startMenu"
+	bool isStart = true;							// Verifica se o MenuInicial está ou não ativo. Inicialmente, está ativo.
+
 	// Nave
 	sf::Sprite ship;								// Objeto do tipo "sf::Sprite" que representa o Sprite
 	sf::Texture shipTxt;							// Objeto do tipo "sf::Texture" que implementa a Textura do Sprite
@@ -64,6 +70,10 @@ int main()
 	// ------------------------- Inicializações -------------------------
 	// Inicialização da Janela
 	window.setFramerateLimit(60);					// Limita o FPS em um teto de 60FPS, controlando a performance do Game.
+
+	// Inicialização do Menu Inicial
+	startMenuImg.loadFromFile("res/startScreen.png");
+	startMenu.setTexture(startMenuImg);
 
 	// Inicializações da Nave
 	shipTxt.loadFromFile("res/ship.png");			// Carrega a imagem que está em "res/ship.png" para a textura "shipTxt".
@@ -106,266 +116,286 @@ int main()
 				window.close();
 		}
 
-		// ----------------------- Input Handling -----------------------
-		// Tecla Z (com delay de 0.5segundos)
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && bTrigger.getElapsedTime().asMilliseconds() >= 500)
+		// EXTRA #01: MENU INICIAL
+		// Os Menu's exigem "Loops", assim como o Game Loop. Mas, para mantermos o nível
+		// iremos "economizar" esse Loop e incluir o Menu Loop dentro do Game Loop usando
+		// o Booleano "isStart" para separarmos a Lógica do Game da Lógica do Menu. Veja:
+		
+		// Menu Inicial Loop
+		if (isStart)
 		{
-			// Posicionamos e Rotacionamos o Molde do Projétil de acordo com a Nave
-			bMolde.setPosition(ship.getPosition());
-			bMolde.setRotation(ship.getRotation());
+			// ----------------------- Input Handling -----------------------
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
+				isStart = false;		// Desligameos o Menu 
 
-			// Geramos uma Velocidade baseada na rotação da Nave (sAngle) no momento do disparo.
-			sf::Vector2f tempVel;
-			tempVel.x = cos(sAngle * 3.1415 / 180) * 5;
-			tempVel.y = sin(sAngle * 3.1415 / 180) * 5;
+			// ----------------------- Tratamento de Renderizações -----------------------
+			window.clear();
 
-			// Inserimos o Projétil e sua Velocidade nas suas respectivas Listas
-			listBullets.push_back(bMolde);
-			bVelocity.push_back(tempVel);
-
-			// Resetamos o Timer do Delay de 0.5 Segundos
-			bTrigger.restart();
+			window.draw(startMenu);
+			
+			window.display();
+			
 		}
-
-		// Tecla "UP"
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
-		{
-			// Modificamos as componentes vetoriais da Velocidade na Nave de acordo com o seu ângulo de rotação
-			sVelocity.x += cos(sAngle * 3.1415 / 180) * 0.02;
-			sVelocity.y += sin(sAngle * 3.1415 / 180) * 0.02;
-		}
-
-		// Tecla "Left" e "Right":
-		// Diminuimos ou Aumentamos, respectivamente, o valor do ângulo de Rotação.
-		// Vale lembrar que o valor dos ângulos, em grau, crescem no sentido Horário!
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-			sAngle -= 2;
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-			sAngle += 2;
-
-		// ----------------------- Processamento -----------------------
-		// Correção do Valor de Ângulo (Deve permanecer no intervalo 0~360)
-		if (sAngle > 360)
-			sAngle -= 360;
-		else if (sAngle < 0)
-			sAngle = +360;
-
-		// Correção de Posicionamento da Nave
-		// No nosso Algoritmo, nós verificamos se a posição da Nave ultrapassa algum dos
-		// quatro limites da Janela, e então o "puxamos" para a outra extremidade oposta da
-		// Janela usando o método ".move()".
-		if (ship.getPosition().x < 0)
-			ship.move(800, 0);
-		else if (ship.getPosition().x > window.getSize().x)
-			ship.move(-800, 0);
-
-		if (ship.getPosition().y < 0)
-			ship.move(0, 600);
-		else if (ship.getPosition().y > window.getSize().y)
-			ship.move(0, -600);
-
-		// Execução da Rotação e Movimentação do Sprite da Nave
-		ship.setRotation(sAngle);
-		ship.move(sVelocity);
-
-		// Execução do Movimentação de todos os Projéteis de "listBullets"
-		for (int i = 0; i < listBullets.size(); i++)
-			listBullets[i].move(bVelocity[i]);
-
-		// Correção de Posicionamento dos Asteroids
-		// Segue a mesma lógica da Correção de Posicionamento da Nave
-		// Com a diferença de que a verificação deve ser feita para todos os
-		// Asteroids contidos na lista "listAsteroids"
-		for (int i = 0; i < listAsteroids.size(); i++)
-		{
-			if (listAsteroids[i].getPosition().x < 0)
-				listAsteroids[i].move(800, 0);
-			else if (listAsteroids[i].getPosition().x > window.getSize().x)
-				listAsteroids[i].move(-800, 0);
-
-			if (listAsteroids[i].getPosition().y < 0)
-				listAsteroids[i].move(0, 600);
-			else if (listAsteroids[i].getPosition().y > window.getSize().y)
-				listAsteroids[i].move(0, -600);
-		}
-
-		// Execução do Movimentação de todos os Asteroids de "listAsteroids"
-		for (int i = 0; i < listAsteroids.size(); i++)
-			listAsteroids[i].move(aVelocity[i]);
-
-		// Spawning Asteroids
-		// Sempre que a lista de Asteroids estiver vazia, iremos criar novos 4
-		// Asteroids, cada qual em um trecho aleatório das 4 extremidades da Janela.
-		if (listAsteroids.empty())
-		{
-			for (int i = 0; i < 4; i++)
-			{	
-				// Consideramos os Asteroids pares (0 e 2) como os que aparecem nas extremidades Verticais
-				if (i % 2 == 0)
-				{
-					// Geramos um valor aleatório para a posição no eixo X e posicionamos o molde de acordo.
-					int posX = rand() % 800 + 1; // 0 - 800
-					aMolde[2].setPosition(posX, i * 300);
-				}
-				// Consideramos os Asteroids pares (1 e 3) como os que aparecem nas extremidades Horizontais
-				else
-				{
-					// Geramos um valor aleatório para a posição no eixo Y e posicionamos o molde de acordo.
-					int posY = rand() % 600 + 1; // 0 - 800
-					aMolde[2].setPosition((i - 1) * 400, posY);
-				}
-
-				// Criamos uma Velocidade e Rotação para o Asteroid.
-				// Para isso, geramos um valor aleatório de 0~360 para o seu Ângulo de Rotação, e
-				// calculamos a velocidade com base nisto.
-				float tempAngle;
-				tempAngle = rand() % 360 + 1;
-				aMolde[2].setRotation(tempAngle);
-
-				sf::Vector2f tempVel;
-				tempVel.x = cos(tempAngle * 3.1415 / 180) * 1;
-				tempVel.y = sin(tempAngle * 3.1415 / 180) * 1;
-
-				// Inserimos o novo Asteroid e sua Velocidade nas suas respectivas Listas
-				listAsteroids.push_back(aMolde[2]);
-				aVelocity.push_back(tempVel);
-			}
-		}
-
-		// ----------------------- Tratamento de Colisão -----------------------
-		// Verificação e Tratamento de Colisão para a Colisão Asteroid-Projétil
-		// Nós verificaremos, para cada Asteroid, se o mesmo colide com qualquer Projétil
-		// de "listBullets". Se sim, nós iremos apagar o referido Projétil da Lista,
-		// gerar 2 Novos Asteroids (apenas se o referido Asteroid não for o menor) e
-		// apagar o Asteroid colidido de "listAsteroids".
-		for (int i = 0; i < listAsteroids.size(); i++)
-		{
-			for (int j = 0; j < listBullets.size(); j++)
-			{
-				// O "if" abaixo VERIFICA a Colisão
-				if (listBullets[j].getGlobalBounds().intersects(listAsteroids[i].getGlobalBounds()))
-				{
-					// Apagamos o Projétil da posição "j" da lista "listBullets" (e apagamos sua velocidade
-					// na lista espelhada "bVelocity").
-					listBullets.erase(listBullets.begin() + j);
-					bVelocity.erase(bVelocity.begin() + j);
-					
-					// Se o Asteroid da posição "i" não for o Menor (Raio igual a 10)...
-					if (listAsteroids[i].getRadius() > 10)
-					{
-						// Criamos um índice para nos referirmos ao índice do Molde imediatamente menor
-						// ao do Asteroid a ser destruído. Veja:
-						// Asteroid Grande -> Molde[2] -> Raio = 30. (Raio / 10 - 2) == 1 -> Molde[1] < Molde[2]
-						// Asteroid Médio -> Molde[1] -> Raio = 20. (Raio / 10 - 2) == 0 -> Molde[0] < Molde[1]
-						int index = listAsteroids[i].getRadius() / 10 - 2;
-						
-						// Posicionamos o Molde dos Novos Asteroids para a posição do Asteroid Original
-						aMolde[index].setPosition(listAsteroids[i].getPosition());
-
-						// Geramos duas velocidades - uma para cada Asteroid que irá surgir -, onde cada nova
-						// velocidade varia 45º do ângulo do vetor anterior. 
-						sf::Vector2f tempVel[2];
-
-						tempVel[0].x = cos((listAsteroids[i].getRotation() + 45) * 3.1415 / 180) * 1;
-						tempVel[0].y = sin((listAsteroids[i].getRotation() + 45) * 3.1415 / 180) * 1;
-
-						tempVel[1].x = cos((listAsteroids[i].getRotation() - 45) * 3.1415 / 180) * 1;
-						tempVel[1].y = sin((listAsteroids[i].getRotation() - 45) * 3.1415 / 180) * 1;
-
-
-						// Inserimos duas cópias iguais do Molde em "listAsteroids", e cada uma das suas 
-						// respectivas velocidades na lista "aVelocity"
-						listAsteroids.push_back(aMolde[index]); listAsteroids.push_back(aMolde[index]);
-						aVelocity.push_back(tempVel[0]); aVelocity.push_back(tempVel[1]);
-					}
-					
-					// Apagamos o Asteroid da posição "i" da lista "listAsteroid" (e apagamos sua velocidade
-					// na lista espelhada "aVelocity").
-					listAsteroids.erase(listAsteroids.begin() + i);
-					aVelocity.erase(aVelocity.begin() + i);
-
-					// Como a exclusão do Asteroid de "listAsteroid" fará com que os índices dos elementos
-					// posteriores sejam diminuidos no valor de 1 (um), então devemos diminuir o índice do
-					// "for" para garantirmos que nenhum Asteroid deixará de ser verificado.
-					i--; break;
-				}
-			}
-		}
-
-		// Verificação e Tratamento de Colisão para a Colisão Asteroid-Nave
-		// Essa verificação de Colisão é simplória, e você notará que não é muito eficiente
-		// devido às regiões "transparentes" dos Elementos do Game
-		// Nós verificaremos, para cada Asteroid, se o mesmo colide a Nave.
-		// Se a Colisão for verdadeira, então nós iremos decrementar uma variável "sLife"
-		// (que deve ser criada agora). Um detalhe, porém, é importante: pelo
-		// mesmo motivo que verificamos no Disparo de Projéteis, aqui também
-		// devemos ter um Timer para controlar a Frequência de Colisões, se 
-		// não a Nave receberá 60 Colisões por segundo! (Criamos o timer "sSpawn").
-		// Iremos dizer que a Nave só poderá colidir com outro Asteroid após 3 segundos.
-		for (int i = 0; i < listAsteroids.size(); i++)
-		{
-			if (listAsteroids[i].getGlobalBounds().intersects(ship.getGlobalBounds()) && sSpawn.getElapsedTime().asSeconds() > 3)
-			{
-				sLife--;				// Decrementamos o "life" da Nave
-				sSpawn.restart();		// Resetamos o Timer da Colisão
-			}
-		}
-
-		// Aqui, então, faremos uma coisa interessante: iremos fazer a Nave "piscar" quando
-		// não estiver disponível para outra Colisão, e mantê-la fixa na Posição Inicial! 
-		// Temos como saber que a Nave está sem poder Colidir quando o timer "sSpawn" é menor 
-		// que 3 Segundos, pois esse é o tempo mínimo entre Colisão. Faremos, então, com que 
-		// a Nave mude entre Opaco e Transparente de 100 em 100 millisegundos, enquanto o tempo 
-		// total for menor que 3 Segundos.
-		// Para isso usaremos o método ".setColor()" que existe na classe "sf::Sprite".
-		if (sSpawn.getElapsedTime().asSeconds() <= 3)
-		{
-			// Aqui nós fazemos a Nave "piscar"
-			if (sSpawn.getElapsedTime().asMilliseconds() % 100 < 50)		// É necessário aumentarmos a margem de erro por 50millisegundos
-			{
-				if (ship.getColor().a == 255)
-					ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 0));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
-				else
-					ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
-			}
-
-			// Aqui nós mantemos a Nave em um Estágio "inicial", inclusive excluindo quaisquer projétil disparado
-			ship.setPosition(window.getSize().x / 2, window.getSize().y / 2);
-			ship.setRotation(0);
-			sAngle = 0;
-			sVelocity.x = 0; sVelocity.y = 0;
-			listBullets.clear();				// Esse método apaga todos os Projéteis
-			bVelocity.clear();
-		}
+		// Game Loop
 		else
-			ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 255.
+		{
+			// ----------------------- Input Handling -----------------------
+			// Tecla Z (com delay de 0.5segundos)
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z) && bTrigger.getElapsedTime().asMilliseconds() >= 500)
+			{
+				// Posicionamos e Rotacionamos o Molde do Projétil de acordo com a Nave
+				bMolde.setPosition(ship.getPosition());
+				bMolde.setRotation(ship.getRotation());
 
-		// ----------------------- Tratamento de Renderizações -----------------------
-		// Limpa a Tela, preparando-a para Renderizações
-		window.clear();										
+				// Geramos uma Velocidade baseada na rotação da Nave (sAngle) no momento do disparo.
+				sf::Vector2f tempVel;
+				tempVel.x = cos(sAngle * 3.1415 / 180) * 5;
+				tempVel.y = sin(sAngle * 3.1415 / 180) * 5;
 
-		// Desenha a Nave na (buffer de mémoria da) Janela
-		window.draw(ship);									
+				// Inserimos o Projétil e sua Velocidade nas suas respectivas Listas
+				listBullets.push_back(bMolde);
+				bVelocity.push_back(tempVel);
 
-		// Desenha todos os Asteroids na (buffer de mémoria da) Janela
-		for (int i = 0; i < listAsteroids.size(); i++)
-			window.draw(listAsteroids[i]);
+				// Resetamos o Timer do Delay de 0.5 Segundos
+				bTrigger.restart();
+			}
 
-		// Desenha todos os Projéteis na (buffer de mémoria da) Janela
-		for (int i = 0; i < listBullets.size(); i++)
-			window.draw(listBullets[i]);
+			// Tecla "UP"
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+			{
+				// Modificamos as componentes vetoriais da Velocidade na Nave de acordo com o seu ângulo de rotação
+				sVelocity.x += cos(sAngle * 3.1415 / 180) * 0.02;
+				sVelocity.y += sin(sAngle * 3.1415 / 180) * 0.02;
+			}
 
-		// Exibe tudo que está desenhado na (buffer de memória da) Janela
-		window.display();
+			// Tecla "Left" e "Right":
+			// Diminuimos ou Aumentamos, respectivamente, o valor do ângulo de Rotação.
+			// Vale lembrar que o valor dos ângulos, em grau, crescem no sentido Horário!
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+				sAngle -= 2;
+			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+				sAngle += 2;
+
+
+			// ----------------------- Processamento -----------------------
+			// Correção do Valor de Ângulo (Deve permanecer no intervalo 0~360)
+			if (sAngle > 360)
+				sAngle -= 360;
+			else if (sAngle < 0)
+				sAngle = +360;
+
+			// Correção de Posicionamento da Nave
+			// No nosso Algoritmo, nós verificamos se a posição da Nave ultrapassa algum dos
+			// quatro limites da Janela, e então o "puxamos" para a outra extremidade oposta da
+			// Janela usando o método ".move()".
+			if (ship.getPosition().x < 0)
+				ship.move(800, 0);
+			else if (ship.getPosition().x > window.getSize().x)
+				ship.move(-800, 0);
+
+			if (ship.getPosition().y < 0)
+				ship.move(0, 600);
+			else if (ship.getPosition().y > window.getSize().y)
+				ship.move(0, -600);
+
+			// Execução da Rotação e Movimentação do Sprite da Nave
+			ship.setRotation(sAngle);
+			ship.move(sVelocity);
+
+			// Execução do Movimentação de todos os Projéteis de "listBullets"
+			for (int i = 0; i < listBullets.size(); i++)
+				listBullets[i].move(bVelocity[i]);
+
+			// Correção de Posicionamento dos Asteroids
+			// Segue a mesma lógica da Correção de Posicionamento da Nave
+			// Com a diferença de que a verificação deve ser feita para todos os
+			// Asteroids contidos na lista "listAsteroids"
+			for (int i = 0; i < listAsteroids.size(); i++)
+			{
+				if (listAsteroids[i].getPosition().x < 0)
+					listAsteroids[i].move(800, 0);
+				else if (listAsteroids[i].getPosition().x > window.getSize().x)
+					listAsteroids[i].move(-800, 0);
+
+				if (listAsteroids[i].getPosition().y < 0)
+					listAsteroids[i].move(0, 600);
+				else if (listAsteroids[i].getPosition().y > window.getSize().y)
+					listAsteroids[i].move(0, -600);
+			}
+
+			// Execução do Movimentação de todos os Asteroids de "listAsteroids"
+			for (int i = 0; i < listAsteroids.size(); i++)
+				listAsteroids[i].move(aVelocity[i]);
+
+			// Spawning Asteroids
+			// Sempre que a lista de Asteroids estiver vazia, iremos criar novos 4
+			// Asteroids, cada qual em um trecho aleatório das 4 extremidades da Janela.
+			if (listAsteroids.empty())
+			{
+				for (int i = 0; i < 4; i++)
+				{
+					// Consideramos os Asteroids pares (0 e 2) como os que aparecem nas extremidades Verticais
+					if (i % 2 == 0)
+					{
+						// Geramos um valor aleatório para a posição no eixo X e posicionamos o molde de acordo.
+						int posX = rand() % 800 + 1; // 0 - 800
+						aMolde[2].setPosition(posX, i * 300);
+					}
+					// Consideramos os Asteroids pares (1 e 3) como os que aparecem nas extremidades Horizontais
+					else
+					{
+						// Geramos um valor aleatório para a posição no eixo Y e posicionamos o molde de acordo.
+						int posY = rand() % 600 + 1; // 0 - 800
+						aMolde[2].setPosition((i - 1) * 400, posY);
+					}
+
+					// Criamos uma Velocidade e Rotação para o Asteroid.
+					// Para isso, geramos um valor aleatório de 0~360 para o seu Ângulo de Rotação, e
+					// calculamos a velocidade com base nisto.
+					float tempAngle;
+					tempAngle = rand() % 360 + 1;
+					aMolde[2].setRotation(tempAngle);
+
+					sf::Vector2f tempVel;
+					tempVel.x = cos(tempAngle * 3.1415 / 180) * 1;
+					tempVel.y = sin(tempAngle * 3.1415 / 180) * 1;
+
+					// Inserimos o novo Asteroid e sua Velocidade nas suas respectivas Listas
+					listAsteroids.push_back(aMolde[2]);
+					aVelocity.push_back(tempVel);
+				}
+			}
+
+
+			// ----------------------- Tratamento de Colisão -----------------------
+			// Verificação e Tratamento de Colisão para a Colisão Asteroid-Projétil
+			// Nós verificaremos, para cada Asteroid, se o mesmo colide com qualquer Projétil
+			// de "listBullets". Se sim, nós iremos apagar o referido Projétil da Lista,
+			// gerar 2 Novos Asteroids (apenas se o referido Asteroid não for o menor) e
+			// apagar o Asteroid colidido de "listAsteroids".
+			for (int i = 0; i < listAsteroids.size(); i++)
+			{
+				for (int j = 0; j < listBullets.size(); j++)
+				{
+					// O "if" abaixo VERIFICA a Colisão
+					if (listBullets[j].getGlobalBounds().intersects(listAsteroids[i].getGlobalBounds()))
+					{
+						// Apagamos o Projétil da posição "j" da lista "listBullets" (e apagamos sua velocidade
+						// na lista espelhada "bVelocity").
+						listBullets.erase(listBullets.begin() + j);
+						bVelocity.erase(bVelocity.begin() + j);
+
+						// Se o Asteroid da posição "i" não for o Menor (Raio igual a 10)...
+						if (listAsteroids[i].getRadius() > 10)
+						{
+							// Criamos um índice para nos referirmos ao índice do Molde imediatamente menor
+							// ao do Asteroid a ser destruído. Veja:
+							// Asteroid Grande -> Molde[2] -> Raio = 30. (Raio / 10 - 2) == 1 -> Molde[1] < Molde[2]
+							// Asteroid Médio -> Molde[1] -> Raio = 20. (Raio / 10 - 2) == 0 -> Molde[0] < Molde[1]
+							int index = listAsteroids[i].getRadius() / 10 - 2;
+
+							// Posicionamos o Molde dos Novos Asteroids para a posição do Asteroid Original
+							aMolde[index].setPosition(listAsteroids[i].getPosition());
+
+							// Geramos duas velocidades - uma para cada Asteroid que irá surgir -, onde cada nova
+							// velocidade varia 45º do ângulo do vetor anterior. 
+							sf::Vector2f tempVel[2];
+
+							tempVel[0].x = cos((listAsteroids[i].getRotation() + 45) * 3.1415 / 180) * 1;
+							tempVel[0].y = sin((listAsteroids[i].getRotation() + 45) * 3.1415 / 180) * 1;
+
+							tempVel[1].x = cos((listAsteroids[i].getRotation() - 45) * 3.1415 / 180) * 1;
+							tempVel[1].y = sin((listAsteroids[i].getRotation() - 45) * 3.1415 / 180) * 1;
+
+
+							// Inserimos duas cópias iguais do Molde em "listAsteroids", e cada uma das suas 
+							// respectivas velocidades na lista "aVelocity"
+							listAsteroids.push_back(aMolde[index]); listAsteroids.push_back(aMolde[index]);
+							aVelocity.push_back(tempVel[0]); aVelocity.push_back(tempVel[1]);
+						}
+
+						// Apagamos o Asteroid da posição "i" da lista "listAsteroid" (e apagamos sua velocidade
+						// na lista espelhada "aVelocity").
+						listAsteroids.erase(listAsteroids.begin() + i);
+						aVelocity.erase(aVelocity.begin() + i);
+
+						// Como a exclusão do Asteroid de "listAsteroid" fará com que os índices dos elementos
+						// posteriores sejam diminuidos no valor de 1 (um), então devemos diminuir o índice do
+						// "for" para garantirmos que nenhum Asteroid deixará de ser verificado.
+						i--; break;
+					}
+				}
+			}
+
+			// Verificação e Tratamento de Colisão para a Colisão Asteroid-Nave
+			// Essa verificação de Colisão é simplória, e você notará que não é muito eficiente
+			// devido às regiões "transparentes" dos Elementos do Game
+			// Nós verificaremos, para cada Asteroid, se o mesmo colide a Nave.
+			// Se a Colisão for verdadeira, então nós iremos decrementar uma variável "sLife"
+			// (que deve ser criada agora). Um detalhe, porém, é importante: pelo
+			// mesmo motivo que verificamos no Disparo de Projéteis, aqui também
+			// devemos ter um Timer para controlar a Frequência de Colisões, se 
+			// não a Nave receberá 60 Colisões por segundo! (Criamos o timer "sSpawn").
+			// Iremos dizer que a Nave só poderá colidir com outro Asteroid após 3 segundos.
+			for (int i = 0; i < listAsteroids.size(); i++)
+			{
+				if (listAsteroids[i].getGlobalBounds().intersects(ship.getGlobalBounds()) && sSpawn.getElapsedTime().asSeconds() > 3)
+				{
+					sLife--;				// Decrementamos o "life" da Nave
+					sSpawn.restart();		// Resetamos o Timer da Colisão
+				}
+			}
+
+			// Aqui, então, faremos uma coisa interessante: iremos fazer a Nave "piscar" quando
+			// não estiver disponível para outra Colisão, e mantê-la fixa na Posição Inicial! 
+			// Temos como saber que a Nave está sem poder Colidir quando o timer "sSpawn" é menor 
+			// que 3 Segundos, pois esse é o tempo mínimo entre Colisão. Faremos, então, com que 
+			// a Nave mude entre Opaco e Transparente de 100 em 100 millisegundos, enquanto o tempo 
+			// total for menor que 3 Segundos.
+			// Para isso usaremos o método ".setColor()" que existe na classe "sf::Sprite".
+			if (sSpawn.getElapsedTime().asSeconds() <= 3)
+			{
+				// Aqui nós fazemos a Nave "piscar"
+				if (sSpawn.getElapsedTime().asMilliseconds() % 100 < 50)		// É necessário aumentarmos a margem de erro por 50millisegundos
+				{
+					if (ship.getColor().a == 255)
+						ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 0));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
+					else
+						ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
+				}
+
+				// Aqui nós mantemos a Nave em um Estágio "inicial", inclusive excluindo quaisquer projétil disparado
+				ship.setPosition(window.getSize().x / 2, window.getSize().y / 2);
+				ship.setRotation(0);
+				sAngle = 0;
+				sVelocity.x = 0; sVelocity.y = 0;
+				listBullets.clear();				// Esse método apaga todos os Projéteis
+				bVelocity.clear();
+			}
+			else
+				ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 255.
+
+
+			// ----------------------- Tratamento de Renderizações -----------------------
+			// Limpa a Tela, preparando-a para Renderizações
+			window.clear();
+
+			// Desenha a Nave na (buffer de mémoria da) Janela
+			window.draw(ship);
+
+			// Desenha todos os Asteroids na (buffer de mémoria da) Janela
+			for (int i = 0; i < listAsteroids.size(); i++)
+				window.draw(listAsteroids[i]);
+
+			// Desenha todos os Projéteis na (buffer de mémoria da) Janela
+			for (int i = 0; i < listBullets.size(); i++)
+				window.draw(listBullets[i]);
+
+			// Exibe tudo que está desenhado na (buffer de memória da) Janela
+			window.display();
+		}
 	}
 	// ______________________________________________________________
 
 	return 0;
 }
-
-
-
-
-
-
-
