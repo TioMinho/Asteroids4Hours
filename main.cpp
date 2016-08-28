@@ -41,7 +41,7 @@ int main()
 
 	// EXTRA #01: MENU INICIAL
 	// Menu Inicial
-	sf::Sprite startMenu;							// Objeto do tipo "sf::Image" que representa a Imagem de Fundo do Menu Inicial
+	sf::Sprite startMenu;							// Objeto do tipo "sf::Sprite" que representa a Imagem de Fundo do Menu Inicial
 	sf::Texture startMenuImg;						// Textura da Imagem de Fundo a ser carregada em "startMenu"
 	bool isStart = true;							// Verifica se o MenuInicial está ou não ativo. Inicialmente, está ativo.
 
@@ -50,6 +50,13 @@ int main()
 	sf::Text scoreText;								// Texto a ser impresso na Tela para indicar o score atual
 	sf::Font scoreTextFont;							// Fonte necessária para a Renderização do Texto
 	int score = 0;									// Variável para armazenar o valor do Score já obtido
+
+	// EXTRA #03: GAME OVER
+	sf::Sprite gameOverBG;							// Objeto do tipo "sf::Sprite" que representa a Imagem de Fundo da tela de Game Over
+	sf::Texture gameOverBGTxt;						// Textura da Imagem de Fundo a ser carregada em "gameOverBG"
+	bool isOver = false;							// Verifica se o Game Over está ou não ativo. Inicialmente, está inativo.
+	sf::Clock restartTimer;							// Timer para cronometrar o tempo para Resetar o Jogo
+	sf::Text timerText;								// Texto para exibir o Timer de restart do Jogo. Carregará a fonte de "scoreTextFont".
 
 	// Nave
 	sf::Sprite ship;								// Objeto do tipo "sf::Sprite" que representa o Sprite
@@ -77,14 +84,14 @@ int main()
 	// Inicialização da Janela
 	window.setFramerateLimit(60);					// Limita o FPS em um teto de 60FPS, controlando a performance do Game.
 
+	// Inicializações da Nave
+	shipTxt.loadFromFile("res/ship.png");			// Carrega a imagem que está em "res/ship.png" para a textura "shipTxt".
+	ship.setTexture(shipTxt);						// Seleciona "shipTxt" como Textura do sprite "ship"
+	
 	// EXTRA #01: MENU INICIAL
 	// Inicialização do Menu Inicial
 	startMenuImg.loadFromFile("res/startScreen.png");
 	startMenu.setTexture(startMenuImg);
-
-	// Inicializações da Nave
-	shipTxt.loadFromFile("res/ship.png");			// Carrega a imagem que está em "res/ship.png" para a textura "shipTxt".
-	ship.setTexture(shipTxt);						// Seleciona "shipTxt" como Textura do sprite "ship"
 
 	// EXTRA #02: HUD
 	// Inicialização do HUD (Life)
@@ -104,6 +111,15 @@ int main()
 	scoreText.setCharacterSize(14);
 	scoreText.setPosition(25, 25);
 	scoreText.setString("00");
+
+	// EXTRA #03: GAME OVER
+	// Inicialização do Menu Inicial
+	gameOverBGTxt.loadFromFile("res/gameOverScreen.png");
+	gameOverBG.setTexture(gameOverBGTxt);
+
+	timerText.setFont(scoreTextFont);
+	timerText.setCharacterSize(100);
+	timerText.setPosition(350, 350);
 
 	// Na linha a seguir, modificamos o Ponto de Origem do Sprite da Nave para sua posição central
 	// Para isso, nós usamos o método ".getLocalBounds()" para recebermos o Retângulo que contorna o Sprite, e,
@@ -152,15 +168,38 @@ int main()
 		{
 			// ----------------------- Input Handling -----------------------
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z))
-				isStart = false;		// Desligameos o Menu 
+				isStart = false;		// Desligamos o Menu 
 
 			// ----------------------- Tratamento de Renderizações -----------------------
 			window.clear();
-
 			window.draw(startMenu);
-			
 			window.display();
 			
+		}
+		// EXTRA #02: GAME OVER
+		// Game Over Loop
+		else if (isOver)
+		{
+			// ----------------------- Processamento -----------------------
+			// Nesse "loop" do Game Over, nós iremos manter um Timer rodando, sempre atualizando Texto
+			// de Countdown a ser exibido na Tela. Quando esse tempo se esgotar (ou seja, "restartTimer"
+			// tiver um tempo maior que 10 segundos) nós iremos desligar a tela de Game Over, e re-ligar
+			// o Menu Inicial.
+			// Vale lembrar que o "restartTimer" tem que ser "resatado" assim que o Jogador morrer, quando
+			// "sLife" for igual a Zero, lá no Game Loop.
+			if (restartTimer.getElapsedTime().asSeconds() <= 10)
+				timerText.setString(std::to_string(9 - (int)restartTimer.getElapsedTime().asSeconds()));
+			else {
+				isStart = true;
+				isOver = false;
+			}
+		
+			// ----------------------- Tratamento de Renderizações -----------------------
+			window.clear();
+			window.draw(gameOverBG);
+			window.draw(timerText);
+			window.display();
+
 		}
 		// Game Loop
 		else
@@ -374,6 +413,14 @@ int main()
 				{
 					sLife--;				// Decrementamos o "life" da Nave
 					sSpawn.restart();		// Resetamos o Timer da Colisão
+
+					// EXTRA #03: GAME OVER
+					// Verificação de Game Over
+					if (sLife == 0)
+					{
+						isOver = true;
+						restartTimer.restart();
+					}
 				}
 			}
 
