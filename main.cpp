@@ -43,8 +43,10 @@ int main()
 	sf::Sprite ship;								// Objeto do tipo "sf::Sprite" que representa o Sprite
 	sf::Texture shipTxt;							// Objeto do tipo "sf::Texture" que implementa a Textura do Sprite
 	sf::Vector2f sVelocity(0, 0);					// Vetor Bi-dimensional do tipo Float (Vector-2-F) para manipular a Velocidade
-	float sAngle = 0;								// Ângulo de Rotação da Nave
+	float sAngle = 0;								// Ângulo de Rotação da Nave. Inicialmente 0 pois Nave aponta para a Direita.
+	int sLife = 3;									// Variável para indicar o "life" da Nave. Inicializada com o valor 3.
 	sf::Clock bTrigger;								// Timer para controlar a frequência de disparos de Projéteis
+	sf::Clock sSpawn;								// Timer para controlar a frequência de Colisão da Nave com os Asteroids.
 
 	// Projétil
 	std::vector<sf::RectangleShape> listBullets;	// Lista Encadeada de Projéteis do tipo "sf::RectangleShape"
@@ -232,7 +234,7 @@ int main()
 
 		// ----------------------- Tratamento de Colisão -----------------------
 		// Verificação e Tratamento de Colisão para a Colisão Asteroid-Projétil
-		// Nós verificamores, para cada Asteroid, se o mesmo colide com qualquer Projétil
+		// Nós verificaremos, para cada Asteroid, se o mesmo colide com qualquer Projétil
 		// de "listBullets". Se sim, nós iremos apagar o referido Projétil da Lista,
 		// gerar 2 Novos Asteroids (apenas se o referido Asteroid não for o menor) e
 		// apagar o Asteroid colidido de "listAsteroids".
@@ -289,6 +291,54 @@ int main()
 				}
 			}
 		}
+
+		// Verificação e Tratamento de Colisão para a Colisão Asteroid-Nave
+		// Essa verificação de Colisão é simplória, e você notará que não é muito eficiente
+		// devido às regiões "transparentes" dos Elementos do Game
+		// Nós verificaremos, para cada Asteroid, se o mesmo colide a Nave.
+		// Se a Colisão for verdadeira, então nós iremos decrementar uma variável "sLife"
+		// (que deve ser criada agora). Um detalhe, porém, é importante: pelo
+		// mesmo motivo que verificamos no Disparo de Projéteis, aqui também
+		// devemos ter um Timer para controlar a Frequência de Colisões, se 
+		// não a Nave receberá 60 Colisões por segundo! (Criamos o timer "sSpawn").
+		// Iremos dizer que a Nave só poderá colidir com outro Asteroid após 3 segundos.
+		for (int i = 0; i < listAsteroids.size(); i++)
+		{
+			if (listAsteroids[i].getGlobalBounds().intersects(ship.getGlobalBounds()) && sSpawn.getElapsedTime().asSeconds() > 3)
+			{
+				sLife--;				// Decrementamos o "life" da Nave
+				sSpawn.restart();		// Resetamos o Timer da Colisão
+			}
+		}
+
+		// Aqui, então, faremos uma coisa interessante: iremos fazer a Nave "piscar" quando
+		// não estiver disponível para outra Colisão, e mantê-la fixa na Posição Inicial! 
+		// Temos como saber que a Nave está sem poder Colidir quando o timer "sSpawn" é menor 
+		// que 3 Segundos, pois esse é o tempo mínimo entre Colisão. Faremos, então, com que 
+		// a Nave mude entre Opaco e Transparente de 100 em 100 millisegundos, enquanto o tempo 
+		// total for menor que 3 Segundos.
+		// Para isso usaremos o método ".setColor()" que existe na classe "sf::Sprite".
+		if (sSpawn.getElapsedTime().asSeconds() <= 3)
+		{
+			// Aqui nós fazemos a Nave "piscar"
+			if (sSpawn.getElapsedTime().asMilliseconds() % 100 < 50)		// É necessário aumentarmos a margem de erro por 50millisegundos
+			{
+				if (ship.getColor().a == 255)
+					ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 0));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
+				else
+					ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 0.
+			}
+
+			// Aqui nós mantemos a Nave em um Estágio "inicial", inclusive excluindo quaisquer projétil disparado
+			ship.setPosition(window.getSize().x / 2, window.getSize().y / 2);
+			ship.setRotation(0);
+			sAngle = 0;
+			sVelocity.x = 0; sVelocity.y = 0;
+			listBullets.clear();				// Esse método apaga todos os Projéteis
+			bVelocity.clear();
+		}
+		else
+			ship.setColor(sf::Color(ship.getColor().r, ship.getColor().g, ship.getColor().b, 255));		// Mantemos costante os valores de RGB e mudamos somente o Alpha para 255.
 
 		// ----------------------- Tratamento de Renderizações -----------------------
 		// Limpa a Tela, preparando-a para Renderizações
