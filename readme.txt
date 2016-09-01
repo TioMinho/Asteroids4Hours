@@ -28,6 +28,22 @@
 		O commit "Upload Code" representa o código que nós escrevemos durante
 		o Workshop.
 
+		CODE REPORT #01:
+		Alguns programadores me contataram informando que as suas IDE's (basicamente, o
+		Code::Blocks) não estavam reconhecendo a função "std::to_string()", que converte
+		dados para o tipo "std::string". Isso ocorre porque algumas dessas IDEs não vêm,
+		por padrão, configuradas para o C++1. Se você possui esse problema, é possível 
+		soluciona-lo mudando as configurações do Code::Blocks ou da sua IDE para reconhecer 
+		o C++11 ou, mais simples, substituir os trechos de código que usam o "to_string()"
+		pelos seguintes comandos:
+
+			| std::stringstream convertStream;
+			| convertStream << [variávelNumérica];
+			| std::string converted = convertStream.str();
+
+		Obs.: Lembrando que a solução acima só funcionará caso o programador inclua <sstream>
+		como Biblioteca. 
+	
 		Para mais informações, dúvidas ou curiosidades, me contate: 
 		E-mail: minhotmog@gmail.com
 		

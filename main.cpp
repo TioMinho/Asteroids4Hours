@@ -201,6 +201,8 @@ int main()
 			// Vale lembrar que o "restartTimer" tem que ser "resatado" assim que o Jogador morrer, quando
 			// "sLife" for igual a Zero, lá no Game Loop.
 			if (restartTimer.getElapsedTime().asSeconds() <= 10)
+				// ATENÇÃO: Se sua IDE não possui o C++11, ele não irá reconhecer a função "to_string()".
+				// Leia o "readme.txt" que contém o trecho de código que você deverá utilizar para a conversão, nesse caso!
 				timerText.setString(std::to_string(9 - (int)restartTimer.getElapsedTime().asSeconds()));
 			else {
 				isStart = true;
@@ -395,7 +397,11 @@ int main()
 						// EXTRA #02: HUD
 						// Pontuação no Score
 						score += (60 - listAsteroids[i].getRadius());		// Scores de 30 (Grande), 40 (Médio) e 50 (Pequeno)
-						scoreText.setString(std::to_string(score));			// Tranformação do Score em Texto
+
+						// Tranformação do Score em Texto
+						// ATENÇÃO: Se sua IDE não possui o C++11, ele não irá reconhecer a função "to_string()".
+						// Leia o "readme.txt" que contém o trecho de código que você deverá utilizar para a conversão, nesse caso!
+						scoreText.setString(std::to_string(score));			
 
 						// Apagamos o Asteroid da posição "i" da lista "listAsteroid" (e apagamos sua velocidade
 						// na lista espelhada "aVelocity").
@@ -431,7 +437,18 @@ int main()
 					// Verificação de Game Over
 					if (sLife == 0)
 					{
+						// Quando a "Nave" morrer, vamos resetar todos os elementos do Game
 						isOver = true;
+
+						score = 0;
+						sLife = 3;
+
+						listAsteroids.clear();
+						aVelocity.clear();
+
+						listBullets.clear();
+						bVelocity.clear();
+
 
 						// EXTRA #03: GAME OVER
 						restartTimer.restart();
